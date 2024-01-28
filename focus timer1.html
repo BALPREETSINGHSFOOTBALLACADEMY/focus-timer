@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Timer with Break</title>
+<style>
+    #focusTimer, #breakTimer, #digitalClock {
+        font-size: 24px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    #controls {
+        text-align: center;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<div id="focusTimer">Focus Time: 00:00</div>
+<div id="breakTimer">Break Time: 00:00</div>
+<div id="digitalClock"></div>
+<div id="controls">
+    <input type="number" id="minutes" placeholder="Set minutes">
+    <button onclick="startFocusTimer()">Start Focus</button>
+    <button onclick="startBreakTimer()">Start Break</button>
+    <button onclick="pauseResumeTimer()">Pause/Resume</button>
+    <button onclick="resetTimers()">Reset</button>
+</div>
+
+<audio id="alarmSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
+<script>
+let focusTimerInterval;
+let breakTimerInterval;
+let focusStartTime;
+let focusEndTime;
+let focusPausedTime;
+let breakTimeLeft;
+let focusPaused = false;
+let breakPaused = false;
+
+function startFocusTimer() {
+    const minutesInput = document.getElementById("minutes").value;
+    if (!isNaN(minutesInput) && minutesInput > 0) {
+        const now = new Date().getTime();
+        focusStartTime = now;
+        focusEndTime = now + minutesInput * 60 * 1000;
+        displayFocusTime();
+        focusTimerInterval = setInterval(decreaseFocusTime, 1000);
+        focusPaused = false;
+    } else {
+        alert("Please enter a valid number of minutes.");
+    }
+}
+
+function startBreakTimer() {
+    breakTimeLeft = 5 * 60; // 5 minutes break
+    displayBreakTime();
+    breakTimerInterval = setInterval(decreaseBreakTime, 1000);
+    breakPaused = false;
+}
+
+function decreaseFocusTime() {
+    if (!focusPaused) {
+        const now = new Date().getTime();
+        const timeLeft = focusEndTime - now;
+        if (timeLeft > 0) {
+            displayFocusTime(timeLeft);
+        } else {
+            clearInterval(focusTimerInterval);
+            playAlarmSound(); // Play alarm sound
+            setTimeout(stopAlarmSound, 3000); // Stop alarm sound after 3 seconds
+            alert("Focus time is up!");
+        }
+    }
+}
+
+function decreaseBreakTime() {
+    if (!breakPaused && breakTimeLeft > 0) {
+        breakTimeLeft--;
+        displayBreakTime();
+    } else if (breakTimeLeft === 0) {
+        clearInterval(breakTimerInterval);
+        playAlarmSound(); // Play alarm sound
+        setTimeout(stopAlarmSound, 3000); // Stop alarm sound after 3 seconds
+        alert("Break time is up!");
+    }
+}
+
+function displayFocusTime(timeLeft = focusEndTime - new Date().getTime()) {
+    const minutes = Math.floor(timeLeft / 60000);
+    const seconds = Math.floor((timeLeft % 60000) / 1000);
+    const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+    const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+    document.getElementById("focusTimer").textContent = `Focus Time: ${displayMinutes}:${displaySeconds}`;
+}
+
+function displayBreakTime() {
+    const minutes = Math.floor(breakTimeLeft / 60);
+    const seconds = breakTimeLeft % 60;
+    const displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+    const displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+    document.getElementById("breakTimer").textContent = `Break Time: ${displayMinutes}:${displaySeconds}`;
+}
+
+function pauseResumeTimer() {
+    if (!focusPaused) {
+        focusPausedTime = new Date().getTime();
+        clearInterval(focusTimerInterval);
+    } else {
+        const pausedDuration = new Date().getTime() - focusPausedTime;
+        focusEndTime += pausedDuration;
+        focusTimerInterval = setInterval(decreaseFocusTime, 1000);
+    }
+    focusPaused = !focusPaused;
+    breakPaused = !breakPaused;
+}
+
+function resetTimers() {
+    clearInterval(focusTimerInterval);
+    clearInterval(breakTimerInterval);
+    document.getElementById("minutes").value = "";
+    document.getElementById("focusTimer").textContent = "Focus Time: 00:00";
+    document.getElementById("breakTimer").textContent = "Break Time: 00:00";
+    focusPaused = false;
+    breakPaused = false;
+}
+
+function playAlarmSound() {
+    document.getElementById("alarmSound").play();
+}
+
+function stopAlarmSound() {
+    document.getElementById("alarmSound").pause();
+}
+
+function updateClock() {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const seconds = now.getSeconds().toString().padStart(2, "0");
+    const timeString = `${hours}:${minutes}:${seconds}`;
+    document.getElementById("digitalClock").textContent = `Current Time: ${timeString}`;
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+</script>
+
+</body>
+</html>
+
